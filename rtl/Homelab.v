@@ -255,8 +255,8 @@ always @(posedge CLK) begin
 	else begin
 		case (state)
 			IDLE: begin
-				old_DL <= DL_DOWNLOAD && DL_INDEX == 8'h1;
-				if (~old_DL && (DL_DOWNLOAD && DL_INDEX == 8'h1)) begin  //Beginning of HTP Download
+				old_DL <= DL_DOWNLOAD && DL_INDEX == 8'h1 && DL_ADDR == 16'h0000;
+				if (~old_DL && (DL_DOWNLOAD && DL_INDEX == 8'h1 && DL_ADDR == 16'h0000)) begin  //Beginning of HTP Download
 					htp_start_addr  <= 16'h0000;
 					htp_length      <= 16'h0000;
 					htp_data_offset <= 16'h0000;
@@ -295,17 +295,19 @@ always @(posedge CLK) begin
 			
 			HTR_SIZE: begin
 				if(htp_start_addr == 16'h4016) state <= IDLE; //  If this a basic program (starting address of x4016), then don't bother continuing as it needs to be "loaded" via command line.
-				if(old_DL_ADDR != DL_ADDR[0]) begin
-					if(htp_ctr == 1'b0) begin
-						htp_length[7:0]  <= DL_DATA;
-						htp_ctr <= 1'b1;
-					end
-					else begin
-						htp_length[15:8] <= DL_DATA;
-						htp_ctr <= 1'b0;
-						htp_data_offset  <= DL_ADDR + 1'b1;
-						HTP_DOWNLOAD  <= 1'b1;
-						state   <= READ;
+				else begin
+					if(old_DL_ADDR != DL_ADDR[0]) begin
+						if(htp_ctr == 1'b0) begin
+							htp_length[7:0]  <= DL_DATA;
+							htp_ctr <= 1'b1;
+						end
+						else begin
+							htp_length[15:8] <= DL_DATA;
+							htp_ctr <= 1'b0;
+							htp_data_offset  <= DL_ADDR + 1'b1;
+							HTP_DOWNLOAD  <= 1'b1;
+							state   <= READ;
+						end
 					end
 				end
 			end
